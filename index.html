@@ -1,19 +1,50 @@
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
   <title>Number System Converter (Bin-Oct-Dec-Hex)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f4f6fa;color:#0b1220}
-    .card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
-    h1{text-align:center;font-size:22px;margin-bottom:12px}
-    input,select{padding:10px;border-radius:8px;border:1px solid #ddd;font-size:14px;margin:6px 0;width:100%}
-    .results{margin-top:16px}
-    .result-row{display:flex;justify-content:space-between;align-items:center;background:#111827;color:#f9fafb;padding:10px 12px;border-radius:8px;margin-bottom:8px}
-    .label{font-weight:bold}
-    button.copy-btn{background:#2563eb;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;transition:0.2s}
-    button.copy-btn:hover{background:#1e40af}
-    .error{color:#dc2626;font-weight:bold;margin-top:10px}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 20px;
+      background: #f4f6fa;
+      color: #0b1220;
+    }
+    .card {
+      max-width: 750px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    input, select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .selectors {
+      margin-top: 10px;
+    }
+    .output {
+      background: #111827;
+      color: #f9fafb;
+      padding: 14px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -23,80 +54,94 @@
     <label>Enter a number:</label>
     <input id="numInput" placeholder="e.g. 1011 (binary) or 1A (hex)" />
 
-    <label>Convert from:</label>
-    <select id="fromBase">
-      <option value="2">Binary (base 2)</option>
-      <option value="8">Octal (base 8)</option>
-      <option value="10" selected>Decimal (base 10)</option>
-      <option value="16">Hexadecimal (base 16)</option>
-    </select>
+    <div class="selectors">
+      <label>Convert from:</label>
+      <select id="fromBase">
+        <option value="2">Binary (base 2)</option>
+        <option value="8">Octal (base 8)</option>
+        <option value="10" selected>Decimal (base 10)</option>
+        <option value="16">Hexadecimal (base 16)</option>
+      </select>
+    </div>
 
-    <div id="errorMsg" class="error"></div>
-
-    <div class="results" id="results"></div>
+    <div class="output" id="result">Result & steps will appear here</div>
   </div>
 
 <script>
 const DIGITS = "0123456789ABCDEF";
 
 function parseToDecimal(numStr, base){
-  numStr=numStr.trim().toUpperCase();
-  if(numStr.length===0) throw new Error("Please enter a number");
-  let value=0;
-  for(let ch of numStr){
+  numStr = numStr.trim().toUpperCase();
+  let value = 0;
+  let steps = [];
+  let power = numStr.length - 1;
+  for (let ch of numStr){
     let d = DIGITS.indexOf(ch);
-    if(d<0 || d>=base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
-    value=value*base+d;
+    if (d < 0 || d >= base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
+    steps.push(`${ch} × ${base}^${power} = ${d * (base ** power)}`);
+    value = value * base + d;
+    power--;
   }
-  return value;
+  steps.push(`Final decimal value = ${value}`);
+  return {value, steps};
 }
 
 function fromDecimal(value, base){
-  if(value===0) return "0";
-  let digits=[];
-  while(value>0){
-    digits.push(DIGITS[value%base]);
-    value=Math.floor(value/base);
+  if (value === 0) return {result:"0", steps:["0 is 0 in any base."]};
+  let digits = [];
+  let steps = [];
+  let temp = value;
+  while (temp > 0){
+    let rem = temp % base;
+    steps.push(`${temp} ÷ ${base} = ${Math.floor(temp/base)} remainder ${rem} (${DIGITS[rem]})`);
+    digits.push(DIGITS[rem]);
+    temp = Math.floor(temp / base);
   }
-  return digits.reverse().join('');
+  steps.push(`Final result (reversed) = ${digits.reverse().join('')}`);
+  return {result: digits.join(''), steps};
 }
 
-function updateResults(){
-  const input=document.getElementById("numInput").value;
-  const fromBase=Number(document.getElementById("fromBase").value);
-  const resultsDiv=document.getElementById("results");
-  const errorDiv=document.getElementById("errorMsg");
-  resultsDiv.innerHTML="";
-  errorDiv.textContent="";
+function updateConversion(){
+  const input = document.getElementById("numInput").value;
+  const fromBase = Number(document.getElementById("fromBase").value);
+  const resultDiv = document.getElementById("result");
 
-  try{
-    const decimal=parseToDecimal(input,fromBase);
+  if (!input) {
+    resultDiv.textContent = "Result & steps will appear here";
+    return;
+  }
+  try {
+    const {value: decimal, steps: toDecSteps} = parseToDecimal(input, fromBase);
 
-    const bases=[
-      {base:2,label:"Binary"},
-      {base:8,label:"Octal"},
-      {base:10,label:"Decimal"},
-      {base:16,label:"Hexadecimal"}
-    ];
+    // Convert decimal -> all bases
+    const outputs = {};
+    const stepDetails = {};
+    for (let base of [2,8,10,16]) {
+      if (base === fromBase) continue; 
+      const {result, steps} = fromDecimal(decimal, base);
+      outputs[base] = result;
+      stepDetails[base] = steps;
+    }
 
-    bases.forEach(({base,label})=>{
-      const value=fromDecimal(decimal,base);
-      const row=document.createElement("div");
-      row.className="result-row";
-      row.innerHTML=`
-        <span class="label">${label} (base ${base}):</span>
-        <span>${value}</span>
-        <button class="copy-btn" onclick="navigator.clipboard.writeText('${value}')">Copy</button>
-      `;
-      resultsDiv.appendChild(row);
-    });
-  }catch(e){
-    errorDiv.textContent=e.message;
+    // Merge results + steps in one block
+    resultDiv.textContent =
+      `${input} (base ${fromBase}) =\n\n`
+      + `Binary: ${outputs[2]}\n`
+      + `Octal: ${outputs[8]}\n`
+      + `Decimal: ${decimal}\n`
+      + `Hexadecimal: ${outputs[16]}\n\n`
+      + `--- Steps ---\n`
+      + `To Decimal:\n${toDecSteps.join("\n")}\n\n`
+      + `Binary:\n${stepDetails[2].join("\n")}\n\n`
+      + `Octal:\n${stepDetails[8].join("\n")}\n\n`
+      + `Hexadecimal:\n${stepDetails[16].join("\n")}`;
+  } catch(e){
+    resultDiv.textContent = "Error: " + e.message;
   }
 }
 
-document.getElementById("numInput").addEventListener("input", updateResults);
-document.getElementById("fromBase").addEventListener("change", updateResults);
+document.getElementById("numInput").addEventListener("input", updateConversion);
+document.getElementById("fromBase").addEventListener("change", updateConversion);
 </script>
 </body>
 </html>
