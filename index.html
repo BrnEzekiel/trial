@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Number System Converter (Bin-Oct-Dec-Hex)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f4f6fa;color:#0b1220}
+    .card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    h1{text-align:center;font-size:22px;margin-bottom:12px}
+    input,button,select{padding:10px;border-radius:8px;border:1px solid #ddd;font-size:14px;margin:6px 0}
+    .output{background:#111827;color:#f9fafb;padding:12px;border-radius:8px;margin-top:10px;white-space:pre-wrap}
+    .muted{font-size:13px;color:#555}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Binary ↔ Octal ↔ Decimal ↔ Hex Converter</h1>
+
+    <label>Enter a number:</label>
+    <input id="numInput" placeholder="e.g. 1011 (binary) or 1A (hex)" />
+
+    <label>Convert from:</label>
+    <select id="fromBase">
+      <option value="2">Binary (base 2)</option>
+      <option value="8">Octal (base 8)</option>
+      <option value="10" selected>Decimal (base 10)</option>
+      <option value="16">Hexadecimal (base 16)</option>
+    </select>
+
+    <label>Convert to:</label>
+    <select id="toBase">
+      <option value="2">Binary (base 2)</option>
+      <option value="8">Octal (base 8)</option>
+      <option value="10">Decimal (base 10)</option>
+      <option value="16">Hexadecimal (base 16)</option>
+    </select>
+
+    <button id="convertBtn">Convert</button>
+
+    <div class="output" id="result">Result will appear here</div>
+  </div>
+
+<script>
+const DIGITS = "0123456789ABCDEF";
+
+function parseToDecimal(numStr, base){
+  numStr=numStr.trim().toUpperCase();
+  let value=0;
+  for(let ch of numStr){
+    let d = DIGITS.indexOf(ch);
+    if(d<0 || d>=base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
+    value=value*base+d;
+  }
+  return value;
+}
+function fromDecimal(value, base){
+  if(value===0) return "0";
+  let digits=[];
+  while(value>0){
+    digits.push(DIGITS[value%base]);
+    value=Math.floor(value/base);
+  }
+  return digits.reverse().join('');
+}
+
+document.getElementById("convertBtn").onclick=()=>{
+  const input=document.getElementById("numInput").value;
+  const fromBase=Number(document.getElementById("fromBase").value);
+  const toBase=Number(document.getElementById("toBase").value);
+  try{
+    const decimal=parseToDecimal(input,fromBase);
+    const result=fromDecimal(decimal,toBase);
+    document.getElementById("result").textContent =
+      `${input} (base ${fromBase}) = ${result} (base ${toBase})`;
+  }catch(e){
+    document.getElementById("result").textContent="Error: "+e.message;
+  }
+};
+</script>
+</body>
+</html>
