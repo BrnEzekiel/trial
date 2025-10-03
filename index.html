@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Number System Converter (Bin-Oct-Dec-Hex)</title>
+  <title>Number System Converter</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body {
@@ -24,7 +24,7 @@
       font-size: 22px;
       margin-bottom: 12px;
     }
-    input, select {
+    input, select, button {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ddd;
@@ -33,15 +33,24 @@
       width: 100%;
       box-sizing: border-box;
     }
-    .selectors {
-      margin-top: 10px;
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      border: none;
     }
-    .output {
+    button:hover {
+      background: #1d4ed8;
+    }
+    .section {
+      margin-top: 20px;
+    }
+    .output, .steps {
       background: #111827;
       color: #f9fafb;
       padding: 14px;
       border-radius: 8px;
-      margin-top: 15px;
+      margin-top: 10px;
       font-size: 14px;
       white-space: pre-wrap;
     }
@@ -49,7 +58,7 @@
 </head>
 <body>
   <div class="card">
-    <h1>Binary ↔ Octal ↔ Decimal ↔ Hex Converter</h1>
+    <h1>Number System Converter</h1>
 
     <label>Enter a number:</label>
     <input id="numInput" placeholder="e.g. 1011 (binary) or 1A (hex)" />
@@ -62,15 +71,32 @@
         <option value="10" selected>Decimal (base 10)</option>
         <option value="16">Hexadecimal (base 16)</option>
       </select>
+
+      <label>Convert to:</label>
+      <select id="toBase">
+        <option value="2">Binary (base 2)</option>
+        <option value="8">Octal (base 8)</option>
+        <option value="10">Decimal (base 10)</option>
+        <option value="16" selected>Hexadecimal (base 16)</option>
+      </select>
     </div>
 
-    <div class="output" id="result">Result & steps will appear here</div>
+    <button onclick="convertNumber()">Convert</button>
+
+    <div class="section">
+      <h3>Result:</h3>
+      <div class="output" id="result">Result will appear here</div>
+    </div>
+
+    <div class="section">
+      <h3>Steps:</h3>
+      <div class="steps" id="steps">Steps will appear here</div>
+    </div>
   </div>
 
 <script>
 const DIGITS = "0123456789ABCDEF";
 
-// ✅ FIXED: correct decimal parsing for any base
 function parseToDecimal(numStr, base){
   numStr = numStr.trim().toUpperCase();
   let value = 0;
@@ -104,47 +130,38 @@ function fromDecimal(value, base){
   return {result: digits.join(''), steps};
 }
 
-function updateConversion(){
+function convertNumber(){
   const input = document.getElementById("numInput").value;
   const fromBase = Number(document.getElementById("fromBase").value);
+  const toBase = Number(document.getElementById("toBase").value);
   const resultDiv = document.getElementById("result");
+  const stepsDiv = document.getElementById("steps");
 
   if (!input) {
-    resultDiv.textContent = "Result & steps will appear here";
+    resultDiv.textContent = "Result will appear here";
+    stepsDiv.textContent = "Steps will appear here";
     return;
   }
+
   try {
     const {value: decimal, steps: toDecSteps} = parseToDecimal(input, fromBase);
 
-    // Convert decimal -> all bases
-    const outputs = {};
-    const stepDetails = {};
-    for (let base of [2,8,10,16]) {
-      if (base === fromBase) continue; 
-      const {result, steps} = fromDecimal(decimal, base);
-      outputs[base] = result;
-      stepDetails[base] = steps;
+    if (toBase === 10) {
+      resultDiv.textContent = decimal;
+      stepsDiv.textContent = `Converting ${input} (base ${fromBase}) to decimal:\n\n${toDecSteps.join("\n")}`;
+    } else {
+      const {result, steps: fromDecSteps} = fromDecimal(decimal, toBase);
+      resultDiv.textContent = result;
+      stepsDiv.textContent = 
+        `Step 1: Convert ${input} (base ${fromBase}) → decimal:\n${toDecSteps.join("\n")}\n\n` +
+        `Step 2: Convert decimal ${decimal} → base ${toBase}:\n${fromDecSteps.join("\n")}`;
     }
 
-    // Merge results + steps in one block
-    resultDiv.textContent =
-      `${input} (base ${fromBase}) =\n\n`
-      + `Binary: ${outputs[2]}\n`
-      + `Octal: ${outputs[8]}\n`
-      + `Decimal: ${decimal}\n`
-      + `Hexadecimal: ${outputs[16]}\n\n`
-      + `--- Steps ---\n`
-      + `To Decimal:\n${toDecSteps.join("\n")}\n\n`
-      + `Binary:\n${stepDetails[2].join("\n")}\n\n`
-      + `Octal:\n${stepDetails[8].join("\n")}\n\n`
-      + `Hexadecimal:\n${stepDetails[16].join("\n")}`;
   } catch(e){
-    resultDiv.textContent = "Error: " + e.message;
+    resultDiv.textContent = "Error";
+    stepsDiv.textContent = e.message;
   }
 }
-
-document.getElementById("numInput").addEventListener("input", updateConversion);
-document.getElementById("fromBase").addEventListener("change", updateConversion);
 </script>
 </body>
 </html>
