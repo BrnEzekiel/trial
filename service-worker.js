@@ -1,18 +1,22 @@
-self.addEventListener("install", event => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open("num-converter-cache").then(cache => {
+    caches.open("app-cache").then((cache) => {
       return cache.addAll([
         "./",
         "./index.html",
-        "./manifest.json"
+        "./manifest.json",
+        "./style.css",   // if you have
+        "./script.js",   // if you have
+        "./icon-192.png",
+        "./icon-512.png"
       ]);
     })
   );
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => {
+    caches.match(event.request).then((response) => {
       return response || fetch(event.request);
     })
   );
