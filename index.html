@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6200ee">
+  <meta name="theme-color" content="#6200ee">
 
   <title>Number System Converter</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -64,7 +64,7 @@
     <h1>Number System Converter</h1>
 
     <label>Enter a number:</label>
-    <input id="numInput" placeholder="e.g. 1011 (binary) or 1A (hex)" />
+    <input id="numInput" placeholder="e.g. 1011.101 (binary) or 59.7737 (decimal)" />
 
     <div class="selectors">
       <label>Convert from:</label>
@@ -100,13 +100,16 @@
 <script>
 const DIGITS = "0123456789ABCDEF";
 
+// Convert input string in base -> decimal (supports fractions)
 function parseToDecimal(numStr, base){
   numStr = numStr.trim().toUpperCase();
+  let [intPart, fracPart] = numStr.split(".");
   let value = 0;
   let steps = [];
-  let power = numStr.length - 1;
 
-  for (let ch of numStr){
+  // Integer part
+  let power = intPart.length - 1;
+  for (let ch of intPart){
     let d = DIGITS.indexOf(ch);
     if (d < 0 || d >= base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
     let contribution = d * (base ** power);
@@ -114,23 +117,59 @@ function parseToDecimal(numStr, base){
     value += contribution;
     power--;
   }
+
+  // Fractional part
+  if (fracPart) {
+    let fracValue = 0;
+    for (let i = 0; i < fracPart.length; i++) {
+      let ch = fracPart[i];
+      let d = DIGITS.indexOf(ch);
+      if (d < 0 || d >= base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
+      let contribution = d * (base ** -(i + 1));
+      steps.push(`${ch} × ${base}^(-${i+1}) = ${contribution}`);
+      fracValue += contribution;
+    }
+    value += fracValue;
+  }
+
   steps.push(`Final decimal value = ${value}`);
   return {value, steps};
 }
 
-function fromDecimal(value, base){
-  if (value === 0) return {result:"0", steps:["0 is 0 in any base."]};
-  let digits = [];
+// Convert decimal -> target base (supports fractions)
+function fromDecimal(value, base, precision = 8){
+  let intPart = Math.floor(value);
+  let fracPart = value - intPart;
   let steps = [];
-  let temp = value;
+
+  // Integer conversion
+  let digits = [];
+  if (intPart === 0) digits.push("0");
+  let temp = intPart;
   while (temp > 0){
     let rem = temp % base;
     steps.push(`${temp} ÷ ${base} = ${Math.floor(temp/base)} remainder ${rem} (${DIGITS[rem]})`);
     digits.push(DIGITS[rem]);
     temp = Math.floor(temp / base);
   }
-  steps.push(`Final result (reversed) = ${digits.reverse().join('')}`);
-  return {result: digits.join(''), steps};
+  digits.reverse();
+
+  // Fractional conversion
+  let fracDigits = [];
+  let count = 0;
+  while (fracPart > 0 && count < precision){
+    fracPart *= base;
+    let digit = Math.floor(fracPart);
+    fracDigits.push(DIGITS[digit]);
+    steps.push(`${fracPart.toFixed(6)} → digit ${DIGITS[digit]}`);
+    fracPart -= digit;
+    count++;
+  }
+
+  let result = digits.join("");
+  if (fracDigits.length > 0) result += "." + fracDigits.join("");
+  steps.push(`Final result = ${result}`);
+  return {result, steps};
 }
 
 function convertNumber(){
@@ -165,12 +204,12 @@ function convertNumber(){
     stepsDiv.textContent = e.message;
   }
 }
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(() => console.log("Service Worker registered"));
-  }
+
+// Register service worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js")
+    .then(() => console.log("Service Worker registered"));
+}
 </script>
 </body>
 </html>
-
-
