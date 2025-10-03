@@ -70,16 +70,19 @@
 <script>
 const DIGITS = "0123456789ABCDEF";
 
+// ✅ FIXED: correct decimal parsing for any base
 function parseToDecimal(numStr, base){
   numStr = numStr.trim().toUpperCase();
   let value = 0;
   let steps = [];
   let power = numStr.length - 1;
+
   for (let ch of numStr){
     let d = DIGITS.indexOf(ch);
     if (d < 0 || d >= base) throw new Error(`Invalid digit '${ch}' for base ${base}`);
-    steps.push(`${ch} × ${base}^${power} = ${d * (base ** power)}`);
-    value = value * base + d;
+    let contribution = d * (base ** power);
+    steps.push(`${ch} × ${base}^${power} = ${contribution}`);
+    value += contribution;
     power--;
   }
   steps.push(`Final decimal value = ${value}`);
